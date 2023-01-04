@@ -11,7 +11,7 @@ public class CrubController : EnemyController
     float maxWalkforce = 2.0f;
 
     //キャラの向き
-    private int direction;
+    private float direction;
 
     //初めて見えた時だけ動かす
     private bool firstVisible = true;
@@ -19,11 +19,15 @@ public class CrubController : EnemyController
     new Rigidbody2D rigidbody2D;
     SpriteRenderer spriteRenderer;
 
+    private float defaultWalkForce;
+
     // Start is called before the first frame update
     void Start()
     {
         this.rigidbody2D = GetComponent<Rigidbody2D>();
         //this.spriteRenderer = GetComponent<SpriteRenderer>();
+        defaultWalkForce = walkForce;
+        direction = transform.localScale.x;
     }
 
     // Update is called once per frame
@@ -34,18 +38,17 @@ public class CrubController : EnemyController
 
     private void move()
     {
-        //向く方向
-        if (walkForce > 0)
+        if (turnFlag)
         {
-            direction = -5;
-        }
-        else
-        {
-            direction = 5;
+            walkForce *= -1;
+            turnFlag = false;
+
+            //向く方向
+            direction = -1 * transform.localScale.x;
         }
 
         //キャラが向く方向
-        transform.localScale = new Vector3(direction, 5, 1);
+        transform.localScale = new Vector3(direction, transform.localScale.y, 1);
 
         //if (spriteRenderer.isVisible)
         //{

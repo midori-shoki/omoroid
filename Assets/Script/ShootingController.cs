@@ -9,30 +9,30 @@ public class ShootingController : MonoBehaviour
 
     private GameObject Player;
     private PlayerController playerController;
-    private int direcion = 0;
 
-    Vector3 shootPos;
+    private float xDirection;
+
+    Vector2 shootPos;
 
     void Start()
     {
         this.Player = GameObject.Find("Player");
         playerController = Player.GetComponent<PlayerController>();
 
+        xDirection = playerController.transform.localScale.x;
         shootPos = transform.position;
-        direcion = playerController.playerDireciton;
 
     }
 
     // Update is called once per frame
-    void Update()
+    void  FixedUpdate()
     {
         Move();
-
     }
 
     public void Move()
     {
-        if (direcion < 0)
+        if (xDirection < 0)
         {
             shootPos.x -= speed * Time.deltaTime; //x座標にspeedを加算
         }

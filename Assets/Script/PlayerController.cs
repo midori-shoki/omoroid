@@ -5,9 +5,6 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     [SerializeField]
-    VariableJoystick joystick;
-
-    [SerializeField]
     float speed = 1.0f;
 
     [SerializeField]
@@ -23,25 +20,23 @@ public class PlayerController : MonoBehaviour
     private bool canAttack; //攻撃可能状態かを指定するフラグ
 
     //private CharacterController controller;
-    private Vector3 direction;
-    private int xDirection;
-    private bool moveFlag;
-    private const int playerScale = 3;
+    private float playerScaleX = 1;
+    private float playerScaleY = 1;
 
     [SerializeField]
     private float walkForce = 2.0f;
 
-    const float maxWalkForce = 3.2f;
-
     [SerializeField]
-    private float jumpForce = 10.0f;
+    private float jumpSpeed = 10.0f;
 
-    private float maxJumpForce = 0.2f;
     public bool gloundFlag;
     public bool jumpButtonFlag;
     public bool attackButtonFlag;
-    private bool jumpFlag;
-    private float oldPostion;
+    public float gravityScale;
+    public float jumpHeight;
+
+    private bool isJump;
+    private float jumpPos = 0.0f;
 
     protected GameObject textDisplay;
 
@@ -49,121 +44,79 @@ public class PlayerController : MonoBehaviour
 
     public LayerMask groundlayer;
 
-    public enum playerPositon : int
-    {
-        right = 1,
-        left = -1
-    }
-
-    public int playerDireciton = (int)playerPositon.right;
+    public float attackDirection;
 
     void Start()
     {
         this.rigidbody2D = GetComponent<Rigidbody2D>();
         currentAttackTime = attackTime;
         textDisplay = GameObject.Find("TextDisplay");
-        xDirection = playerScale;
+        playerScaleX = gameObject.transform.localScale.x;
+        playerScaleY = gameObject.transform.localScale.y;
     }
 
-    void Update()
+    void FixedUpdate()
     {
-        //キャラが向く方向
-        transform.localScale = new Vector3(xDirection, playerScale, 1);
-        
+        //キー入力されたら行動する
+        float horizontalKey = Input.GetAxis("Horizontal");
 
-        if (moveFlag)
+        float xSpeed = 0.0f;
+        float ySpeed = gravityScale;
+
+        if (horizontalKey > 0)
         {
-            Move();
+            transform.localScale = new Vector3(playerScaleX, playerScaleY, 1);
+            xSpeed = speed;
         }
-
-        if (Input.GetKeyDown("space"))
+        else if (horizontalKey < 0)
         {
-            jumpButtonFlag = true;
-        }
-
-        if (jumpButtonFlag)
-        {
-            //oldPostion = rigidbody2D.velocity.y;
-            Jump();
-        }
-
-        if (Input.GetKeyUp("space"))
-        {
-            jumpButtonFlag = false;
-        }
-
-        if (attackButtonFlag)
-        {
-            Attack();
-        }
-    }
-
-    public void FixedUpdate()
-    {
-        direction = Vector3.forward * joystick.Vertical + Vector3.right * joystick.Horizontal;
-
-        if (direction.x > 0)
-        {
-            xDirection = playerScale;
-            playerDireciton = (int)playerPositon.right;
-        }
-        else　if (direction.x < 0)
-        {
-            xDirection = -playerScale;
-            playerDireciton = (int)playerPositon.left;
-        }
-
-        if (direction.x == 0)
-        {
-            moveFlag = false;
+            transform.localScale = new Vector3(-playerScaleX, playerScaleY, 1);
+            xSpeed = -speed;
         }
         else
         {
-            moveFlag = true;
+            xSpeed = 0.0f;
         }
-    }
 
-    private void Move()
-    {
-        //x方向へのスピード
-        Vector2 speed = transform.right * (xDirection / playerScale) * walkForce;
+        float verticalKey = Input.GetAxis("Vertical");
 
-        if (Mathf.Abs(speed.x) > maxWalkForce)
+        bool isGround = Physics2D.Linecast(transform.position, transform.position - transform.up, groundlayer);
+
+        if (isGround)
         {
-            if (speed.x > 0)
+            if (verticalKey > 0)
             {
-                speed.x = maxWalkForce;
+                ySpeed = jumpSpeed;
+                jumpPos = transform.position.y;
+                isJump = true;
+
+                Debug.Log("上昇");
+                rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, ySpeed);
             }
             else
             {
-                speed.x = -maxWalkForce;
+                Debug.Log("接地");
+                isJump = false;
+            }
+        }
+        else if (isJump)
+        {
+            //上ボタンを押されている。かつ、現在の高さがジャンプした位置から自分の決めた位置より下ならジャンプを継続する
+            if (verticalKey > 0 && jumpPos + jumpHeight > transform.position.y)
+            {
+                ySpeed = jumpSpeed;
+            }
+            else
+            {
+                isJump = false;
             }
         }
 
-        Debug.Log($"今:{speed.x}");
+        rigidbody2D.velocity = new Vector2(xSpeed, ySpeed);
 
-        rigidbody2D.AddForce(speed);
-    }
-
-    private void Jump()
-    {
-        bool grounded = Physics2D.Linecast(transform.position, transform.position - transform.up, groundlayer);
-
-        if (grounded)
+        if (Input.GetKey("space"))
         {
-            jumpFlag = true;
-            Debug.Log("ジャンプできる");
-        }
-
-        if (transform.localPosition.y < 1 && jumpFlag == true)
-        {
-            rigidbody2D.AddForce(transform.up * jumpForce);
-        }
-
-        if (oldPostion > rigidbody2D.velocity.y)
-        {
-            jumpFlag = false;
-            Debug.Log("ジャンプできない");
+            Attack();
         }
     }
 
@@ -176,15 +129,15 @@ public class PlayerController : MonoBehaviour
             canAttack = true; //指定時間を超えたら攻撃可能にする
         }
 
-        if (attackButtonFlag) //ボタンを押したら
+        if (canAttack)
         {
-            if (canAttack)
-            {
-                //第一引数に生成するオブジェクト、第二引数にVector3型の座標、第三引数に回転の情報
-                Instantiate(lazer, attackPoint.position, Quaternion.identity);
-                canAttack = false;　//攻撃フラグをfalseにする
-                attackTime = 0f;　//attackTimeを0に戻す
-            }
+            attackDirection = transform.localScale.x;
+            //第一引数に生成するオブジェクト、第二引数にVector3型の座標、第三引数に回転の情報
+            //Instantiate(lazer, attackPoint.position, Quaternion.identity);
+            GameObject playerShot = Instantiate(lazer) as GameObject;
+            playerShot.transform.position = attackPoint.position;
+            canAttack = false; //攻撃フラグをfalseにする
+            attackTime = 0f; //attackTimeを0に戻す
         }
     }
 

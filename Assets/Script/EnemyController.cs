@@ -12,6 +12,7 @@ public class EnemyController : MonoBehaviour
 
     protected Animator animator;
     protected GameObject gameDirector;
+    protected bool turnFlag = false;
     //protected GameDirector gameDirectorScript;
 
     void Awake()
@@ -58,6 +59,15 @@ public class EnemyController : MonoBehaviour
         {
             Debug.Log("弾と接触");
             Destroy(gameObject);
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.tag == "Wall")
+        {
+            Debug.Log("壁と接触");
+            turnFlag = true;
         }
     }
 }
