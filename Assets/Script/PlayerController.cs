@@ -46,6 +46,9 @@ public class PlayerController : MonoBehaviour
 
     public float attackDirection;
 
+    GameObject gameDirectorObject;
+    GameDirector gameDirector;
+
     void Start()
     {
         this.rigidbody2D = GetComponent<Rigidbody2D>();
@@ -53,6 +56,9 @@ public class PlayerController : MonoBehaviour
         textDisplay = GameObject.Find("TextDisplay");
         playerScaleX = gameObject.transform.localScale.x;
         playerScaleY = gameObject.transform.localScale.y;
+
+        gameDirectorObject = GameObject.Find("GameDirector");
+        gameDirector = gameDirectorObject.GetComponent<GameDirector>();
     }
 
     void FixedUpdate()
@@ -91,7 +97,7 @@ public class PlayerController : MonoBehaviour
                 isJump = true;
 
                 Debug.Log("上昇");
-                rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, ySpeed);
+                //rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, ySpeed);
             }
             else
             {
@@ -148,6 +154,8 @@ public class PlayerController : MonoBehaviour
             Debug.Log("敵と接触");
             //textDisplay.SetActive(true);
             Destroy(gameObject);
+
+            gameDirector.GameOverSceneTransition();
         }
     }
 }
