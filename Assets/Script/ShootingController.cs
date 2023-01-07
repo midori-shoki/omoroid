@@ -25,7 +25,7 @@ public class ShootingController : MonoBehaviour
     }
 
     // Update is called once per frame
-    void  FixedUpdate()
+    void FixedUpdate()
     {
         Move();
     }
@@ -47,5 +47,10 @@ public class ShootingController : MonoBehaviour
     private void OnBecameInvisible()
     {
         Destroy(this.gameObject);
+    }
+
+    private void OnTriggerStay2D(Collider2D collision)
+    {
+        Destroy(gameObject);
     }
 }

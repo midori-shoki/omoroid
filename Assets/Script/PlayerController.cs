@@ -1,5 +1,8 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
@@ -29,6 +32,9 @@ public class PlayerController : MonoBehaviour
     [SerializeField]
     private float jumpSpeed = 10.0f;
 
+    [SerializeField]
+    private HitPointController hitPointController;
+
     public bool gloundFlag;
     public bool jumpButtonFlag;
     public bool attackButtonFlag;
@@ -37,6 +43,10 @@ public class PlayerController : MonoBehaviour
 
     private bool isJump;
     private float jumpPos = 0.0f;
+
+    public float life;
+    public float maxLife = 100;
+
 
     protected GameObject textDisplay;
 
@@ -49,6 +59,12 @@ public class PlayerController : MonoBehaviour
     GameObject gameDirectorObject;
     GameDirector gameDirector;
 
+    [SerializeField]
+    private SpriteRenderer sp;
+
+    // ダメージ判定フラグ
+    private bool isDamage { get; set; }
+
     void Start()
     {
         this.rigidbody2D = GetComponent<Rigidbody2D>();
@@ -59,6 +75,8 @@ public class PlayerController : MonoBehaviour
 
         gameDirectorObject = GameObject.Find("GameDirector");
         gameDirector = gameDirectorObject.GetComponent<GameDirector>();
+
+        life = maxLife;
     }
 
     void FixedUpdate()
@@ -124,6 +142,14 @@ public class PlayerController : MonoBehaviour
         {
             Attack();
         }
+
+        // ダメージを受けている場合、点滅させる
+        if (isDamage)
+        {
+            float level = Mathf.Abs(Mathf.Sin(Time.time * 10));
+            sp.color = new Color(1f, 1f, 1f, level);
+
+        }
     }
 
     private void Attack()
@@ -152,10 +178,42 @@ public class PlayerController : MonoBehaviour
         if (collision.gameObject.tag == "Enemy")
         {
             Debug.Log("敵と接触");
-            //textDisplay.SetActive(true);
-            Destroy(gameObject);
 
+            if (isDamage)
+            {
+                return;
+            }
+
+            Damage(20);
+            OnDamage(this.GetCancellationTokenOnDestroy()).Forget();
+
+            //textDisplay.SetActive(true);
+        }
+    }
+
+    //ダメージ処理
+    public void Damage(float damagePoint)
+    {
+        isDamage = true;
+        hitPointController.GaugeReduction(damagePoint);
+        life -= damagePoint;
+
+        if (life <= 0)
+        {
+            Destroy(gameObject);
             gameDirector.GameOverSceneTransition();
         }
+    }
+
+    //ダメージ点滅コルーチン
+    public async UniTask OnDamage(CancellationToken cancellation_token)
+    {
+
+        await UniTask.Delay(TimeSpan.FromSeconds(1), cancellationToken: cancellation_token);
+
+        // 通常状態に戻す
+        isDamage = false;
+        sp.color = new Color(1f, 1f, 1f, 1f);
+
     }
 }

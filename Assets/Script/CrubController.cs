@@ -31,7 +31,7 @@ public class CrubController : EnemyController
     }
 
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
         move();
     }

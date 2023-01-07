@@ -32,7 +32,7 @@ public class EnemyController : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
         //落下死
         if (this.transform.position.y <= -10)
