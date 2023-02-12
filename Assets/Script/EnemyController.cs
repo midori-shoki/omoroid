@@ -13,6 +13,12 @@ public class EnemyController : MonoBehaviour
     protected Animator animator;
     protected GameObject gameDirector;
     protected bool turnFlag = false;
+
+    protected float life;
+    protected float maxLife = 100;
+
+    public LayerMask groundlayer;
+
     //protected GameDirector gameDirectorScript;
 
     void Awake()
@@ -25,14 +31,14 @@ public class EnemyController : MonoBehaviour
     {
         this.Player = GameObject.Find("Player");
         playerController = Player.GetComponent<PlayerController>();
-        //this.animator = GetComponent<Animator>();
+        this.animator = GetComponent<Animator>();
 
         //this.gameDirector = GameObject.Find("GameDirector");
         //gameDirectorScript = gameDirector.GetComponent<GameDirector>();
     }
 
     // Update is called once per frame
-    void FixedUpdate()
+    void Update()
     {
         //落下死
         if (this.transform.position.y <= -10)
@@ -53,7 +59,7 @@ public class EnemyController : MonoBehaviour
         Destroy(gameObject);
     }
 
-    private void OnTriggerStay2D(Collider2D collision)
+    protected virtual void OnTriggerStay2D(Collider2D collision)
     {
         if (collision.gameObject.tag == "Bullet")
         {

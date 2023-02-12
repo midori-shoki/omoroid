@@ -40,6 +40,6 @@ public class HitPointController : MonoBehaviour
             },
             valueTo,
             time
-        );
+        ).SetLink(this.gameObject);
     }
 }

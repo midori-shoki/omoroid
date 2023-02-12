@@ -20,12 +20,15 @@ public class ShootingController : MonoBehaviour
         playerController = Player.GetComponent<PlayerController>();
 
         xDirection = playerController.transform.localScale.x;
+
         shootPos = transform.position;
+
+        Debug.Log($"Y:{shootPos.y}");
 
     }
 
     // Update is called once per frame
-    void FixedUpdate()
+    void Update()
     {
         Move();
     }
@@ -39,6 +42,11 @@ public class ShootingController : MonoBehaviour
         else
         {
             shootPos.x += speed * Time.deltaTime; //x座標にspeedを加算
+        }
+
+        if ((Input.GetKey("right") || Input.GetKey("left")) && Input.GetKey("up"))
+        {
+            shootPos.y += 0.1f;
         }
 
         transform.position = shootPos; //現在の位置情報に反映させる

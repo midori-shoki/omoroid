@@ -59,6 +59,8 @@ public class PlayerController : MonoBehaviour
     GameObject gameDirectorObject;
     GameDirector gameDirector;
 
+    Animator animator;
+
     [SerializeField]
     private SpriteRenderer sp;
 
@@ -68,6 +70,7 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         this.rigidbody2D = GetComponent<Rigidbody2D>();
+        this.animator = GetComponent<Animator>();
         currentAttackTime = attackTime;
         textDisplay = GameObject.Find("TextDisplay");
         playerScaleX = gameObject.transform.localScale.x;
@@ -80,6 +83,24 @@ public class PlayerController : MonoBehaviour
     }
 
     void FixedUpdate()
+    {
+        Move();
+
+        if (Input.GetKey("space"))
+        {
+            Attack();
+        }
+
+        // ダメージを受けている場合、点滅させる
+        if (isDamage)
+        {
+            float level = Mathf.Abs(Mathf.Sin(Time.time * 10));
+            sp.color = new Color(1f, 1f, 1f, level);
+
+        }
+    }
+
+    private void Move()
     {
         //キー入力されたら行動する
         float horizontalKey = Input.GetAxis("Horizontal");
@@ -102,9 +123,12 @@ public class PlayerController : MonoBehaviour
             xSpeed = 0.0f;
         }
 
+        //プレイヤーの速度に応じてアニメーションのスピードを変える
+        //animator.speed = xSpeed / 2.0f;
+
         float verticalKey = Input.GetAxis("Vertical");
 
-        bool isGround = Physics2D.Linecast(transform.position, transform.position - transform.up, groundlayer);
+        bool isGround = Physics2D.Linecast(transform.position, transform.position - transform.up * 0.8f, groundlayer);
 
         if (isGround)
         {
@@ -112,14 +136,11 @@ public class PlayerController : MonoBehaviour
             {
                 ySpeed = jumpSpeed;
                 jumpPos = transform.position.y;
-                isJump = true;
 
-                Debug.Log("上昇");
-                //rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, ySpeed);
+                isJump = true;
             }
             else
             {
-                Debug.Log("接地");
                 isJump = false;
             }
         }
@@ -138,17 +159,36 @@ public class PlayerController : MonoBehaviour
 
         rigidbody2D.velocity = new Vector2(xSpeed, ySpeed);
 
-        if (Input.GetKey("space"))
+        if (xSpeed == 0 && ySpeed == gravityScale)
         {
-            Attack();
+            if (verticalKey < 0)
+            {
+                this.animator.SetBool("Duck", true);
+            }
+        }
+        else
+        {
+            this.animator.SetBool("Duck", false);
         }
 
-        // ダメージを受けている場合、点滅させる
-        if (isDamage)
+        if (isGround == true && xSpeed != 0)
         {
-            float level = Mathf.Abs(Mathf.Sin(Time.time * 10));
-            sp.color = new Color(1f, 1f, 1f, level);
+            this.animator.SetBool("Run", true);
+            this.animator.SetBool("Jump", false);
+        }
+        else if (isGround == true && xSpeed == 0)
+        {
+            this.animator.SetBool("Run", false);
+        }
 
+        if (isJump)
+        {
+            this.animator.SetBool("Run", false);
+            this.animator.SetBool("Jump", true);
+        }
+        else
+        {
+            this.animator.SetBool("Jump", false);
         }
     }
 
@@ -167,7 +207,16 @@ public class PlayerController : MonoBehaviour
             //第一引数に生成するオブジェクト、第二引数にVector3型の座標、第三引数に回転の情報
             //Instantiate(lazer, attackPoint.position, Quaternion.identity);
             GameObject playerShot = Instantiate(lazer) as GameObject;
-            playerShot.transform.position = attackPoint.position;
+
+            Vector2 ShootPosition = attackPoint.position;
+
+            if (this.animator.GetBool("Duck"))
+            {
+                ShootPosition.y -= Mathf.Abs(gameObject.transform.localScale.y / 7.2f);
+            }
+
+            playerShot.transform.position = ShootPosition;
+
             canAttack = false; //攻撃フラグをfalseにする
             attackTime = 0f; //attackTimeを0に戻す
         }
@@ -184,7 +233,7 @@ public class PlayerController : MonoBehaviour
                 return;
             }
 
-            Damage(20);
+            Damage(30);
             OnDamage(this.GetCancellationTokenOnDestroy()).Forget();
 
             //textDisplay.SetActive(true);

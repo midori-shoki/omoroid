@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using DG.Tweening;
 
 public class CrubController : EnemyController
 {
@@ -14,7 +15,7 @@ public class CrubController : EnemyController
     private float direction;
 
     //初めて見えた時だけ動かす
-    private bool firstVisible = true;
+    private bool firstVisible = false;
 
     new Rigidbody2D rigidbody2D;
     SpriteRenderer spriteRenderer;
@@ -25,13 +26,15 @@ public class CrubController : EnemyController
     void Start()
     {
         this.rigidbody2D = GetComponent<Rigidbody2D>();
-        //this.spriteRenderer = GetComponent<SpriteRenderer>();
+        this.spriteRenderer = GetComponent<SpriteRenderer>();
         defaultWalkForce = walkForce;
         direction = transform.localScale.x;
+
+        life = maxLife;
     }
 
     // Update is called once per frame
-    void FixedUpdate()
+    void Update()
     {
         move();
     }
@@ -50,10 +53,10 @@ public class CrubController : EnemyController
         //キャラが向く方向
         transform.localScale = new Vector3(direction, transform.localScale.y, 1);
 
-        //if (spriteRenderer.isVisible)
-        //{
-        //    firstVisible = true;
-        //}
+        if (spriteRenderer.isVisible)
+        {
+            firstVisible = true;
+        }
 
         if (firstVisible)
         {
@@ -63,9 +66,24 @@ public class CrubController : EnemyController
             if (speedX < maxWalkforce)
             {
                 rigidbody2D.AddForce(transform.right * walkForce);
+                //this.animator.SetBool("CrubWalk", true);
             }
 
         }
 
+    }
+
+    protected override void OnTriggerStay2D(Collider2D collision)
+    {
+        if (collision.gameObject.tag == "Bullet")
+        {
+            Debug.Log("弾と接触");
+            life -= 40;
+
+            if (life <= 0)
+            {
+                Destroy(gameObject);
+            }
+        }
     }
 }
